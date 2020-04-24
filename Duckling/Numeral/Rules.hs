@@ -32,6 +32,21 @@ ruleIntegerNumeric = Rule
       _ -> Nothing
   }
 
+ruleIntegerNumericPrefix :: Rule
+ruleIntegerNumericPrefix = Rule
+  { name = "integer (numeric)"
+  , pattern =
+    [ regex $
+      "(0*)?" ++ -- prefix
+      "(\\d{1,18})" -- number
+    ]
+  , prod = \tokens -> case tokens of
+      (Token RegexMatch (GroupMatch (pref:num:_)):_) -> do
+        mnum <- toInteger <$> parseInt num
+        doubleExt pref (fromIntegral mnum)
+      _ -> Nothing
+  }
+
 ruleFractions :: Rule
 ruleFractions = Rule
   { name = "fractional number"
@@ -48,6 +63,7 @@ ruleFractions = Rule
 
 rules :: [Rule]
 rules =
-  [ ruleIntegerNumeric
+  [ ruleIntegerNumericPrefix
+  , ruleIntegerNumeric
   , ruleFractions
   ]

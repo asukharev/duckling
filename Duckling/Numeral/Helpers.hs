@@ -12,6 +12,7 @@ module Duckling.Numeral.Helpers
   ( decimalsToDouble
   , diffIntegerDigits
   , double
+  , doubleExt
   , integer
   , multiply
   , isMultipliable
@@ -152,6 +153,16 @@ notOkForAnyTime _ = Nothing
 double :: Double -> Maybe Token
 double x = Just . Token Numeral $ NumeralData
   { value = x
+  , prefix = Nothing
+  , grain = Nothing
+  , multipliable = False
+  , okForAnyTime = True
+  }
+
+doubleExt :: Text -> Double -> Maybe Token
+doubleExt x y = Just . Token Numeral $ NumeralData
+  { value = y
+  , prefix = Just x
   , grain = Nothing
   , multipliable = False
   , okForAnyTime = True

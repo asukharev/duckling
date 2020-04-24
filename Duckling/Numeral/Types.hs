@@ -26,6 +26,7 @@ import Duckling.Resolve
 
 data NumeralData = NumeralData
   { value        :: Double
+  , prefix       :: Maybe Text
   , grain        :: Maybe Int
   , multipliable :: Bool
   -- Hack until other use cases pop up,
@@ -38,16 +39,48 @@ data NumeralData = NumeralData
 
 instance Resolve NumeralData where
   type ResolvedValue NumeralData = NumeralValue
-  resolve _ _ NumeralData {value} = Just (NumeralValue {vValue = value}, False)
+  resolve _ _ NumeralData {value = v, prefix = Nothing } =
+    Just (simple v, False)
+  resolve _ _ NumeralData {value = v, prefix = Just p } =
+    Just (prefixed v p, False)
 
-newtype NumeralValue = NumeralValue { vValue :: Double }
-  deriving (Eq, Show)
+
+data PrefixValue = PrefixValue
+  { pValue :: Text }
+  deriving (Eq, Ord, Show)
+
+data SingleValue = SingleValue
+  { sValue :: Double }
+  deriving (Eq, Ord, Show)
+
+data NumeralValue
+  = NumeralValue { vValue :: Double }
+  | SimpleValue SingleValue
+  | PrefixedValue (SingleValue, PrefixValue)
+  deriving (Eq, Ord, Show)
 
 instance ToJSON NumeralValue where
-  toJSON (NumeralValue value) = object
+  toJSON (SimpleValue v) = object
     [ "type" .= ("value" :: Text)
-    , "value" .= value
+    , "value" .= sValue v
     ]
+  toJSON (PrefixedValue (v, p)) = object
+    [ "type" .= ("value" :: Text)
+    , "value" .= sValue v
+    , "prefix" .= pValue p
+    ]
+
+simple :: Double -> NumeralValue
+simple v = SimpleValue $ single_c v
+
+prefixed :: Double -> Text -> NumeralValue
+prefixed v p = PrefixedValue (single_c v, prefix_c p)
+
+prefix_c :: Text -> PrefixValue
+prefix_c p = PrefixValue { pValue = p }
+
+single_c :: Double -> SingleValue
+single_c v = SingleValue { sValue = v }
 
 getIntValue :: Double -> Maybe Int
 getIntValue x = if rest == 0 then Just int else Nothing
